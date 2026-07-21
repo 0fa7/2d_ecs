@@ -3,6 +3,9 @@
 class SDL_Renderer;
 class SDL_Window;
 
+const int FPS = 60;
+const int MILLISECS_PER_FRAME = 1000 / FPS;
+
 class Game
 {
 public:
@@ -23,5 +26,5 @@ private:
     SDL_Renderer* m_renderer;
     SDL_Window* m_window;
     bool m_is_running;
-    int m_offset = 0;
+    int millisecs_previous_frame = 0;
 };
