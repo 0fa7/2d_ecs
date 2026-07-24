@@ -1,13 +1,8 @@
 #include "Game.hpp"
+#include "ECS/ECS.hpp"
+#include "Logger/Logger.hpp"
 
-#include <iostream>
-
-#include <glm/glm.hpp>
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-
-glm::vec2 player_position;
-glm::vec2 player_velocity;
 
 Game::Game() :
     m_window_width(2560),
@@ -26,7 +21,7 @@ void Game::Initialize()
 {
     if(SDL_Init(SDL_INIT_EVERYTHING) != 0)
     {
-        std::cerr << "Failed to initialize SDL" << std::endl;
+        Logger::Err("Failed to initialize SDL");
     }
 
     m_window = SDL_CreateWindow(
@@ -39,7 +34,7 @@ void Game::Initialize()
 
     if(!m_window)
     {
-        std::cerr << "Failed to create window" << std::endl;
+        Logger::Err("Failed to create window");
         m_is_running = false;
     }
 
@@ -50,7 +45,7 @@ void Game::Initialize()
 
     if(!m_renderer)
     {
-        std::cerr << "Failed to create renderer" << std::endl;
+        Logger::Err("Failed to create renderer");
         m_is_running = false;
     }
 
@@ -106,11 +101,7 @@ void Game::ProcessInput()
 
 void Game::Setup()
 {
-    player_position.x = 10.f;
-    player_position.y = 20.f;
-
-    player_velocity.x = 100.0f;
-    player_velocity.y = 50.0f;
+    
 }
 
 void Game::Update()
@@ -127,26 +118,11 @@ void Game::Update()
     double delta_time = (SDL_GetTicks() - millisecs_previous_frame) / 1000.0;
 
     millisecs_previous_frame = SDL_GetTicks();
-
-    player_position.x += player_velocity.x * delta_time;
-    player_position.y += player_velocity.y * delta_time;
 }
 
 void Game::Render()
 {
     SDL_SetRenderDrawColor(m_renderer, 21, 21, 21, 255);
     SDL_RenderClear(m_renderer);
-
-    SDL_Surface* surface = IMG_Load("../assets/images/tank-tiger-right.png");
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(m_renderer, surface);
-    SDL_FreeSurface(surface);
-    SDL_Rect dstRect = {
-        static_cast<int>(player_position.x),
-        static_cast<int>(player_position.y),
-        128,
-        128};
-
-    SDL_RenderCopy(m_renderer, texture, nullptr, &dstRect);
-    
     SDL_RenderPresent(m_renderer);
 }

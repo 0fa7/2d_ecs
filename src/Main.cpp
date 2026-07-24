@@ -1,10 +1,10 @@
-#include <iostream>
-
-#include "Game.hpp"
+#include "Game/Game.hpp"
+#include "Logger/Logger.hpp"
 
 int main(int argc, char* argv[])
 {
-    std::cout << "Hello world!" << std::endl;
+    Logger::Info("Hello world!");
+    Logger::Err("Hello world!");
     Game game;
     game.Initialize();
     game.Run();

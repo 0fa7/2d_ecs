@@ -6,17 +6,24 @@ find_package(Lua REQUIRED)
 
 include_directories(libs/
     libs/glm
+    src/
     ${LUA_INCLUDE_DIR})
 
 set(2D_ECS_SOURCES
+    src/Components/TransformComponent.hpp
+    src/ECS/ECS.cpp
+    src/ECS/ECS.hpp
+    src/Logger/Logger.cpp
+    src/Logger/Logger.hpp
+    src/Game/Game.cpp
+    src/Game/Game.hpp
     src/Main.cpp
-    src/Game.cpp
     libs/imgui/imgui.cpp
     libs/imgui/imgui_draw.cpp
     libs/imgui/imgui_tables.cpp
     libs/imgui/imgui_widgets.cpp)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(2d_ecs
