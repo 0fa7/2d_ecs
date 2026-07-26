@@ -1,16 +1,22 @@
 #include "Game.hpp"
+
+#include "Components/RigidBodyComponent.hpp"
+#include "Components/TransformComponent.hpp"
 #include "ECS/ECS.hpp"
 #include "Logger/Logger.hpp"
+#include "Systems/MovementSystem.hpp"
 
 #include <SDL2/SDL.h>
 
 Game::Game() :
     m_window_width(2560),
     m_window_height(1440),
-    m_window(nullptr),
     m_renderer(nullptr),
-    m_is_running(false)
+    m_window(nullptr),
+    m_is_running(false),
+    millisecs_previous_frame(0)
 {
+    m_registry = std::make_unique<Registry>();
 }
 
 Game::~Game()
@@ -101,7 +107,12 @@ void Game::ProcessInput()
 
 void Game::Setup()
 {
-    
+    m_registry->AddSystem<MovementSystem>();
+
+    Entity tank = m_registry->CreateEntity();
+
+    tank.AddComponent<TransformComponent>(glm::vec2(10, 30), glm::vec2(1.f, 1.f), 0.f);
+    tank.AddComponent<RigidBodyComponent>(glm::vec2(50.f, 0.f));
 }
 
 void Game::Update()
@@ -118,6 +129,12 @@ void Game::Update()
     double delta_time = (SDL_GetTicks() - millisecs_previous_frame) / 1000.0;
 
     millisecs_previous_frame = SDL_GetTicks();
+
+    // update systems
+    m_registry->GetSystem<MovementSystem>().Update();
+
+    // process entitites waiting to be created/destroyed
+    m_registry->Update();
 }
 
 void Game::Render()

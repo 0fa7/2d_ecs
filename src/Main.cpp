@@ -3,8 +3,7 @@
 
 int main(int argc, char* argv[])
 {
-    Logger::Info("Hello world!");
-    Logger::Err("Hello world!");
+    Logger::Info("2d_ecs!");
     Game game;
     game.Initialize();
     game.Run();

@@ -10,6 +10,7 @@ include_directories(libs/
     ${LUA_INCLUDE_DIR})
 
 set(2D_ECS_SOURCES
+    src/Components/RigidBodyComponent.hpp
     src/Components/TransformComponent.hpp
     src/ECS/ECS.cpp
     src/ECS/ECS.hpp
@@ -17,6 +18,8 @@ set(2D_ECS_SOURCES
     src/Logger/Logger.hpp
     src/Game/Game.cpp
     src/Game/Game.hpp
+    src/Systems/MovementSystem.cpp
+    src/Systems/MovementSystem.hpp
     src/Main.cpp
     libs/imgui/imgui.cpp
     libs/imgui/imgui_draw.cpp

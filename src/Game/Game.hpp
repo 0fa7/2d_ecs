@@ -1,5 +1,9 @@
 #pragma once
 
+#include <memory>
+
+class Registry;
+
 class SDL_Renderer;
 class SDL_Window;
 
@@ -26,5 +30,6 @@ private:
     SDL_Renderer* m_renderer;
     SDL_Window* m_window;
     bool m_is_running;
-    int millisecs_previous_frame = 0;
+    int millisecs_previous_frame;
+    std::unique_ptr<Registry> m_registry;
 };
