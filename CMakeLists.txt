@@ -20,6 +20,8 @@ set(2D_ECS_SOURCES
     src/Game/Game.hpp
     src/Systems/MovementSystem.cpp
     src/Systems/MovementSystem.hpp
+    src/Systems/RenderSystem.cpp
+    src/Systems/RenderSystem.hpp
     src/Main.cpp
     libs/imgui/imgui.cpp
     libs/imgui/imgui_draw.cpp

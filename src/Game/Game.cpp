@@ -1,10 +1,12 @@
 #include "Game.hpp"
 
 #include "Components/RigidBodyComponent.hpp"
+#include "Components/SpriteComponent.hpp"
 #include "Components/TransformComponent.hpp"
 #include "ECS/ECS.hpp"
 #include "Logger/Logger.hpp"
 #include "Systems/MovementSystem.hpp"
+#include "Systems/RenderSystem.hpp"
 
 #include <SDL2/SDL.h>
 
@@ -108,11 +110,17 @@ void Game::ProcessInput()
 void Game::Setup()
 {
     m_registry->AddSystem<MovementSystem>();
+    m_registry->AddSystem<RenderSystem>();
 
     Entity tank = m_registry->CreateEntity();
-
     tank.AddComponent<TransformComponent>(glm::vec2(10, 30), glm::vec2(1.f, 1.f), 0.f);
-    tank.AddComponent<RigidBodyComponent>(glm::vec2(50.f, 0.f));
+    tank.AddComponent<RigidBodyComponent>(glm::vec2(50.f, 10.f));
+    tank.AddComponent<SpriteComponent>(10, 10);
+
+    Entity truck = m_registry->CreateEntity();
+    truck.AddComponent<TransformComponent>(glm::vec2(100, 300), glm::vec2(1.f, 1.f), 0.f);
+    truck.AddComponent<RigidBodyComponent>(glm::vec2(50.f, -10.f));
+    truck.AddComponent<SpriteComponent>(40, 100);
 }
 
 void Game::Update()
@@ -131,8 +139,8 @@ void Game::Update()
     millisecs_previous_frame = SDL_GetTicks();
 
     // update systems
-    m_registry->GetSystem<MovementSystem>().Update();
-
+    m_registry->GetSystem<MovementSystem>().Update(delta_time);
+    
     // process entitites waiting to be created/destroyed
     m_registry->Update();
 }
@@ -141,5 +149,6 @@ void Game::Render()
 {
     SDL_SetRenderDrawColor(m_renderer, 21, 21, 21, 255);
     SDL_RenderClear(m_renderer);
+    m_registry->GetSystem<RenderSystem>().Update(m_renderer);
     SDL_RenderPresent(m_renderer);
 }
