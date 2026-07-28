@@ -1,4 +1,5 @@
 {
     "C_Cpp.default.compilerPath": "/usr/bin/gcc-15",
-    "cmake.configureOnEdit": false
+    "cmake.configureOnEdit": false,
+    "files.refactoring.autoSave": false
 }

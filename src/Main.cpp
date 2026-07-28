@@ -1,11 +1,11 @@
-#include "Game/Game.hpp"
-#include "Logger/Logger.hpp"
+#include "./Game/Game.h"
 
-int main(int argc, char* argv[])
-{
-    Logger::Info("2d_ecs!");
+int main(int argc, char* argv[]) {
     Game game;
+
     game.Initialize();
     game.Run();
     game.Destroy();
+
+    return 0;
 }

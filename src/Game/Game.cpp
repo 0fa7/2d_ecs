@@ -1,154 +1,184 @@
-#include "Game.hpp"
-
-#include "Components/RigidBodyComponent.hpp"
-#include "Components/SpriteComponent.hpp"
-#include "Components/TransformComponent.hpp"
-#include "ECS/ECS.hpp"
-#include "Logger/Logger.hpp"
-#include "Systems/MovementSystem.hpp"
-#include "Systems/RenderSystem.hpp"
-
+#include "Game.h"
+#include "../Logger/Logger.h"
+#include "../ECS/ECS.h"
+#include "../Components/TransformComponent.h"
+#include "../Components/RigidBodyComponent.h"
+#include "../Components/SpriteComponent.h"
+#include "../Components/AnimationComponent.h"
+#include "../Systems/MovementSystem.h"
+#include "../Systems/RenderSystem.h"
+#include "../Systems/AnimationSystem.h"
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <glm/glm.hpp>
+#include <iostream>
+#include <fstream>
 
-Game::Game() :
-    m_window_width(2560),
-    m_window_height(1440),
-    m_renderer(nullptr),
-    m_window(nullptr),
-    m_is_running(false),
-    millisecs_previous_frame(0)
-{
-    m_registry = std::make_unique<Registry>();
+Game::Game() {
+    isRunning = false;
+    registry = std::make_unique<Registry>();
+    assetStore = std::make_unique<AssetStore>();
+    Logger::Log("Game constructor called!");
 }
 
-Game::~Game()
-{
+Game::~Game() {
+    Logger::Log("Game destructor called!");   
 }
 
-void Game::Initialize()
-{
-    if(SDL_Init(SDL_INIT_EVERYTHING) != 0)
-    {
-        Logger::Err("Failed to initialize SDL");
+void Game::Initialize() {
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+        Logger::Err("Error initializing SDL.");
+        return;
     }
-
-    m_window = SDL_CreateWindow(
-        "2d_ecs", 
-        SDL_WINDOWPOS_CENTERED, 
-        SDL_WINDOWPOS_CENTERED, 
-        m_window_width, 
-        m_window_height, 
-        0);
-
-    if(!m_window)
-    {
-        Logger::Err("Failed to create window");
-        m_is_running = false;
+    SDL_DisplayMode displayMode;
+    SDL_GetCurrentDisplayMode(0, &displayMode);
+    windowWidth = 3840;
+    windowHeight = 2160;
+    window = SDL_CreateWindow(
+        NULL,
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        windowWidth,
+        windowHeight,
+        0
+    );
+    if (!window) {
+        Logger::Err("Error creating SDL window.");
+        return;
     }
-
-    m_renderer = SDL_CreateRenderer(
-        m_window,
-        -1,
-        0);
-
-    if(!m_renderer)
-    {
-        Logger::Err("Failed to create renderer");
-        m_is_running = false;
+    renderer = SDL_CreateRenderer(window, -1, 0);
+    if (!renderer) {
+        Logger::Err("Error creating SDL renderer.");
+        return;
     }
-
-    millisecs_previous_frame = SDL_GetTicks();
-
-    m_is_running = true;
+    //SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+    isRunning = true;
 }
 
-void Game::Run()
-{
+void Game::ProcessInput() {
+    SDL_Event sdlEvent;
+    while (SDL_PollEvent(&sdlEvent)) {
+        switch (sdlEvent.type) {
+            case SDL_QUIT:
+                isRunning = false;
+                break;
+            case SDL_KEYDOWN:
+                if (sdlEvent.key.keysym.sym == SDLK_ESCAPE) {
+                    isRunning = false;
+                }
+                break;
+        }
+    }
+}
+
+void Game::LoadLevel(int level) {
+    // Add the sytems that need to be processed in our game
+    registry->AddSystem<MovementSystem>();
+    registry->AddSystem<RenderSystem>();
+    registry->AddSystem<AnimationSystem>();
+
+    // Adding assets to the asset store
+    assetStore->AddTexture(renderer, "tank-image", "../assets/images/tank-panther-right.png");
+    assetStore->AddTexture(renderer, "truck-image", "../assets/images/truck-ford-right.png");
+    assetStore->AddTexture(renderer, "chopper-image", "../assets/images/chopper.png");
+    assetStore->AddTexture(renderer, "radar-image", "../assets/images/radar.png");
+    assetStore->AddTexture(renderer, "tilemap-image", "../assets/tilemaps/jungle.png");
+
+    // Load the tilemap
+    int tileSize = 32;
+    double tileScale = 3;
+    int mapNumCols = 25;
+    int mapNumRows = 20;
+
+    std::fstream mapFile;
+    mapFile.open("../assets/tilemaps/jungle.map");
+
+    for (int y = 0; y < mapNumRows; y++) {
+        for (int x = 0; x < mapNumCols; x++) {
+            char ch;
+            mapFile.get(ch);
+            int srcRectY = std::atoi(&ch) * tileSize;
+            mapFile.get(ch);
+            int srcRectX = std::atoi(&ch) * tileSize;
+            mapFile.ignore();
+
+            Entity tile = registry->CreateEntity();
+            tile.AddComponent<TransformComponent>(glm::vec2(x * (tileScale * tileSize), y * (tileScale * tileSize)), glm::vec2(tileScale, tileScale), 0.0);
+            tile.AddComponent<SpriteComponent>("tilemap-image", tileSize, tileSize, 0, srcRectX, srcRectY);
+        }
+    }
+    mapFile.close();
+
+    // Create an entity
+    Entity chopper = registry->CreateEntity();
+    chopper.AddComponent<TransformComponent>(glm::vec2(10.0, 100.0), glm::vec2(3.0, 3.0), 0.0);
+    chopper.AddComponent<RigidBodyComponent>(glm::vec2(0.0, 0.0));
+    chopper.AddComponent<SpriteComponent>("chopper-image", 32, 32, 1);
+    chopper.AddComponent<AnimationComponent>(2, 15, true);
+    
+    Entity radar = registry->CreateEntity();
+    radar.AddComponent<TransformComponent>(glm::vec2(windowWidth - 200, 10.0), glm::vec2(3.0, 3.0), 0.0);
+    radar.AddComponent<RigidBodyComponent>(glm::vec2(0.0, 0.0));
+    radar.AddComponent<SpriteComponent>("radar-image", 64, 64, 1);
+    radar.AddComponent<AnimationComponent>(8, 5, true);
+    
+    Entity tank = registry->CreateEntity();
+    tank.AddComponent<TransformComponent>(glm::vec2(10.0, 10.0), glm::vec2(3.0, 3.0), 0.0);
+    tank.AddComponent<RigidBodyComponent>(glm::vec2(30.0, 0.0));
+    tank.AddComponent<SpriteComponent>("tank-image", 32, 32, 1);
+
+    Entity truck = registry->CreateEntity();
+    truck.AddComponent<TransformComponent>(glm::vec2(10.0, 50.0), glm::vec2(3.0, 3.0), 0.0);
+    truck.AddComponent<RigidBodyComponent>(glm::vec2(20.0, 0.0));
+    truck.AddComponent<SpriteComponent>("truck-image", 32, 32, 2);
+}
+
+void Game::Setup() {
+    LoadLevel(1);
+}
+
+void Game::Update() {
+    // If we are too fast, waste some time until we reach the MILLISECS_PER_FRAME
+    int timeToWait = MILLISECS_PER_FRAME - (SDL_GetTicks() - millisecsPreviousFrame);
+    if (timeToWait > 0 && timeToWait <= MILLISECS_PER_FRAME) {
+        SDL_Delay(timeToWait);
+    }
+
+    // The difference in ticks since the last frame, converted to seconds
+    double deltaTime = (SDL_GetTicks() - millisecsPreviousFrame) / 1000.0;
+
+    // Store the "previous" frame time
+    millisecsPreviousFrame = SDL_GetTicks();
+    
+    // Update the registry to process the entities that are waiting to be created/deleted
+    registry->Update();
+    
+    // Invoke all the systems that need to update 
+    registry->GetSystem<MovementSystem>().Update(deltaTime);
+    registry->GetSystem<AnimationSystem>().Update();
+}
+
+void Game::Render() {
+    SDL_SetRenderDrawColor(renderer, 21, 21, 21, 255);
+    SDL_RenderClear(renderer);
+
+    // Invoke all the systems that need to render 
+    registry->GetSystem<RenderSystem>().Update(renderer, assetStore);
+
+    SDL_RenderPresent(renderer);
+}
+
+void Game::Run() {
     Setup();
-
-    while(m_is_running)
-    {
+    while (isRunning) {
         ProcessInput();
         Update();
         Render();
     }
 }
 
-void Game::Destroy()
-{
-    SDL_DestroyRenderer(m_renderer);
-    SDL_DestroyWindow(m_window);
+void Game::Destroy() {
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
     SDL_Quit();
-}
-
-void Game::ProcessInput()
-{
-    SDL_Event sdl_event;
-
-    while(SDL_PollEvent(&sdl_event))
-    {
-        switch(sdl_event.type)
-        {
-            case SDL_QUIT:
-            {
-                m_is_running = false;
-                break;
-            }
-            case SDL_KEYDOWN:
-            {
-                break;
-            }
-            default:
-            {
-                break;
-            }
-                
-        }
-    }
-}
-
-void Game::Setup()
-{
-    m_registry->AddSystem<MovementSystem>();
-    m_registry->AddSystem<RenderSystem>();
-
-    Entity tank = m_registry->CreateEntity();
-    tank.AddComponent<TransformComponent>(glm::vec2(10, 30), glm::vec2(1.f, 1.f), 0.f);
-    tank.AddComponent<RigidBodyComponent>(glm::vec2(50.f, 10.f));
-    tank.AddComponent<SpriteComponent>(10, 10);
-
-    Entity truck = m_registry->CreateEntity();
-    truck.AddComponent<TransformComponent>(glm::vec2(100, 300), glm::vec2(1.f, 1.f), 0.f);
-    truck.AddComponent<RigidBodyComponent>(glm::vec2(50.f, -10.f));
-    truck.AddComponent<SpriteComponent>(40, 100);
-}
-
-void Game::Update()
-{
-    // cap frame rate
-    int time_to_wait = MILLISECS_PER_FRAME - (SDL_GetTicks() - millisecs_previous_frame);
-
-    if(time_to_wait > 0 && time_to_wait <= MILLISECS_PER_FRAME)
-    {
-        SDL_Delay(static_cast<Uint32>(time_to_wait));
-    }
-    
-    //  calc delta time to use for consistant movement
-    double delta_time = (SDL_GetTicks() - millisecs_previous_frame) / 1000.0;
-
-    millisecs_previous_frame = SDL_GetTicks();
-
-    // update systems
-    m_registry->GetSystem<MovementSystem>().Update(delta_time);
-    
-    // process entitites waiting to be created/destroyed
-    m_registry->Update();
-}
-
-void Game::Render()
-{
-    SDL_SetRenderDrawColor(m_renderer, 21, 21, 21, 255);
-    SDL_RenderClear(m_renderer);
-    m_registry->GetSystem<RenderSystem>().Update(m_renderer);
-    SDL_RenderPresent(m_renderer);
 }
